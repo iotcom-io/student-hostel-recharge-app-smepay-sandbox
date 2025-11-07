@@ -1,0 +1,11 @@
+{
+  "name": "hostel-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
