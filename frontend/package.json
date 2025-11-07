@@ -7,6 +7,6 @@
   },
   "scripts": {
     "start": "node server.js",
-    "build": "echo Build completed - static files ready in dist folder"
+    "build": "node -e \"console.log('Build completed - static files ready in dist folder')\""
   }
 }
