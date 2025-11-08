@@ -2,8 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Hostel Recharge - SME Pay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Hostel Recharge">
+    <title>Hostel Recharge - SME Pay</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -117,52 +122,125 @@
                 </header>
 
                 <div class="dashboard-content">
-                    <!-- Balance Card -->
-                    <div class="balance-section">
-                        <div class="balance-card">
-                            <h3>Current Balance</h3>
-                            <div class="balance-amount" id="balance-amount">₹0.00</div>
-                            <button id="recharge-btn" class="btn btn-primary">Recharge Now</button>
+                    <!-- Home Section -->
+                    <div id="student-home-section" class="tab-section active">
+                        <!-- Balance Card -->
+                        <div class="balance-section">
+                            <div class="balance-card">
+                                <h3>Current Balance</h3>
+                                <div class="balance-amount" id="balance-amount">₹0.00</div>
+                                <button id="recharge-btn" class="btn btn-primary">💳 Recharge Now</button>
+                            </div>
+                        </div>
+
+                        <!-- Student Info -->
+                        <div class="section">
+                            <h3>My Information</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Student ID:</span>
+                                    <span id="info-student-id">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Name:</span>
+                                    <span id="info-name">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Room:</span>
+                                    <span id="info-room">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parents Numbers -->
+                        <div class="section">
+                            <h3>📞 Allowed Contact Numbers</h3>
+                            <div id="parents-list" class="parents-list"></div>
                         </div>
                     </div>
 
-                    <!-- Student Info -->
-                    <div class="section">
-                        <h3>My Information</h3>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <span class="info-label">Student ID:</span>
-                                <span id="info-student-id">-</span>
+                    <!-- History Section -->
+                    <div id="student-history-section" class="tab-section">
+                        <!-- Recharge History -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h3>💳 Recharge History</h3>
+                                <input type="text" id="recharge-search" class="search-input" placeholder="🔍 Search...">
                             </div>
-                            <div class="info-item">
-                                <span class="info-label">Name:</span>
-                                <span id="info-name">-</span>
+                            <div class="filter-chips">
+                                <button class="filter-chip active" data-filter="all">All</button>
+                                <button class="filter-chip" data-filter="success">Success</button>
+                                <button class="filter-chip" data-filter="pending">Pending</button>
+                                <button class="filter-chip" data-filter="failed">Failed</button>
                             </div>
-                            <div class="info-item">
-                                <span class="info-label">Room:</span>
-                                <span id="info-room">-</span>
+                            <div id="recharge-history" class="table-container"></div>
+                            <button id="load-more-recharges" class="btn btn-secondary" style="display:none; margin-top: 16px;">Load More</button>
+                        </div>
+
+                        <!-- Call History -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h3>📞 Call History</h3>
+                                <input type="text" id="call-search" class="search-input" placeholder="🔍 Search number...">
                             </div>
+                            <div id="call-history" class="table-container"></div>
+                            <button id="load-more-calls" class="btn btn-secondary" style="display:none; margin-top: 16px;">Load More</button>
                         </div>
                     </div>
 
-                    <!-- Parents Numbers -->
-                    <div class="section">
-                        <h3>📞 Allowed Contact Numbers</h3>
-                        <div id="parents-list" class="parents-list"></div>
-                    </div>
-
-                    <!-- Recharge History -->
-                    <div class="section">
-                        <h3>💳 Recharge History</h3>
-                        <div id="recharge-history" class="table-container"></div>
-                    </div>
-
-                    <!-- Call History -->
-                    <div class="section">
-                        <h3>📞 Call History</h3>
-                        <div id="call-history" class="table-container"></div>
+                    <!-- Profile Section -->
+                    <div id="student-profile-section" class="tab-section">
+                        <div class="section">
+                            <h3>👤 My Profile</h3>
+                            <div class="profile-card">
+                                <div class="profile-avatar">
+                                    <span id="profile-initial">S</span>
+                                </div>
+                                <h2 id="profile-name">Student Name</h2>
+                                <p id="profile-id">ID: -</p>
+                                <p id="profile-room">Room: -</p>
+                            </div>
+                        </div>
+                        
+                        <div class="section">
+                            <h3>⚙️ Settings</h3>
+                            <div class="settings-list">
+                                <button class="settings-item" onclick="alert('Feature coming soon!')">
+                                    <span>🔔 Notifications</span>
+                                    <span>›</span>
+                                </button>
+                                <button class="settings-item" onclick="alert('Feature coming soon!')">
+                                    <span>🔒 Change Password</span>
+                                    <span>›</span>
+                                </button>
+                                <button class="settings-item" id="profile-logout-btn">
+                                    <span>🚪 Logout</span>
+                                    <span>›</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Mobile Bottom Navigation -->
+                <nav class="mobile-nav">
+                    <button class="nav-item active" data-tab="home">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-label">Home</span>
+                    </button>
+                    <button class="nav-item" data-tab="history">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-label">History</span>
+                    </button>
+                    <button class="nav-item" id="mobile-recharge-btn">
+                        <span class="nav-icon">💳</span>
+                        <span class="nav-label">Recharge</span>
+                    </button>
+                    <button class="nav-item" data-tab="profile">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-label">Profile</span>
+                    </button>
+                </nav>
             </div>
         </div>
 
@@ -180,6 +258,7 @@
                             <label>Recharge Amount</label>
                             <select id="recharge-amount" required>
                                 <option value="">Select Amount</option>
+                                <option value="100">₹1 (Test)</option>
                                 <option value="10000">₹100</option>
                                 <option value="20000">₹200</option>
                                 <option value="50000">₹500</option>

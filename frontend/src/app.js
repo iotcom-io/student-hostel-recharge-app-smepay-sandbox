@@ -262,12 +262,275 @@ async function loadStudentsList() {
 // ==================== STUDENT DASHBOARD ====================
 function setupStudentListeners() {
     document.getElementById('student-logout-btn').addEventListener('click', logout);
-    document.getElementById('recharge-btn').addEventListener('click', openRechargeModal);
+    
+    // Recharge button listeners (both desktop and mobile)
+    const rechargeBtn = document.getElementById('recharge-btn');
+    const mobileRechargeBtn = document.getElementById('mobile-recharge-btn');
+    if (rechargeBtn) rechargeBtn.addEventListener('click', openRechargeModal);
+    if (mobileRechargeBtn) mobileRechargeBtn.addEventListener('click', openRechargeModal);
+    
     document.getElementById('modal-close').addEventListener('click', closeRechargeModal);
     document.getElementById('recharge-modal').addEventListener('click', (e) => {
         if (e.target.id === 'recharge-modal') closeRechargeModal();
     });
     document.getElementById('recharge-form').addEventListener('submit', handleRecharge);
+    
+    // Mobile navigation
+    setupMobileNavigation();
+    
+    // Search and filters
+    setupHistoryFilters();
+    
+    // Profile section
+    setupProfileSection();
+}
+
+// ==================== MOBILE NAVIGATION ====================
+function setupMobileNavigation() {
+    const navItems = document.querySelectorAll('.mobile-nav button[data-tab]');
+    
+    navItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const tab = item.dataset.tab;
+            switchTab(tab);
+            
+            // Update active state
+            navItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+        });
+    });
+}
+
+function switchTab(tabName) {
+    // Hide all sections
+    document.querySelectorAll('.tab-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show selected section
+    const targetSection = document.getElementById(`student-${tabName}-section`);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+}
+
+// ==================== HISTORY FILTERS & PAGINATION ====================
+let currentRechargeFilter = 'all';
+let currentCallFilter = 'all';
+let rechargePageSize = 20;
+let callPageSize = 20;
+let displayedRecharges = 20;
+let displayedCalls = 20;
+
+function setupHistoryFilters() {
+    // Recharge search
+    const rechargeSearch = document.getElementById('recharge-search');
+    if (rechargeSearch) {
+        rechargeSearch.addEventListener('input', (e) => {
+            filterRechargeHistory(e.target.value);
+        });
+    }
+    
+    // Call search
+    const callSearch = document.getElementById('call-search');
+    if (callSearch) {
+        callSearch.addEventListener('input', (e) => {
+            filterCallHistory(e.target.value);
+        });
+    }
+    
+    // Filter chips for recharges
+    document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const filter = chip.dataset.filter;
+            currentRechargeFilter = filter;
+            
+            // Update active state
+            document.querySelectorAll('.filter-chip[data-filter]').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            
+            // Apply filter
+            filterRechargeHistory();
+        });
+    });
+    
+    // Load more buttons
+    const loadMoreRecharges = document.getElementById('load-more-recharges');
+    if (loadMoreRecharges) {
+        loadMoreRecharges.addEventListener('click', () => {
+            displayedRecharges += rechargePageSize;
+            renderRechargeHistory();
+        });
+    }
+    
+    const loadMoreCalls = document.getElementById('load-more-calls');
+    if (loadMoreCalls) {
+        loadMoreCalls.addEventListener('click', () => {
+            displayedCalls += callPageSize;
+            renderCallHistory();
+        });
+    }
+}
+
+function filterRechargeHistory(searchTerm = '') {
+    if (!currentUser.data || !currentUser.data.recharges) return;
+    
+    let filtered = currentUser.data.recharges;
+    
+    // Filter by status
+    if (currentRechargeFilter !== 'all') {
+        filtered = filtered.filter(r => r.status.toLowerCase() === currentRechargeFilter);
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+        filtered = filtered.filter(r => 
+            (r.provider_txn && r.provider_txn.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (r.amount_cents && r.amount_cents.toString().includes(searchTerm))
+        );
+    }
+    
+    renderRechargeHistory(filtered);
+}
+
+function filterCallHistory(searchTerm = '') {
+    if (!currentUser.data || !currentUser.data.calls) return;
+    
+    let filtered = currentUser.data.calls;
+    
+    // Filter by search term
+    if (searchTerm) {
+        filtered = filtered.filter(call => 
+            (call.to_number && call.to_number.includes(searchTerm))
+        );
+    }
+    
+    renderCallHistory(filtered);
+}
+
+function renderRechargeHistory(recharges = null) {
+    const data = recharges || currentUser.data?.recharges || [];
+    const rechargeHistory = document.getElementById('recharge-history');
+    const loadMoreBtn = document.getElementById('load-more-recharges');
+    
+    if (data.length === 0) {
+        rechargeHistory.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">💳</div>
+                <div class="empty-state-text">No recharge history</div>
+                <div class="empty-state-subtext">Your recharges will appear here</div>
+            </div>
+        `;
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+        return;
+    }
+    
+    const displayData = data.slice(0, displayedRecharges);
+    
+    rechargeHistory.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Transaction ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${displayData.map(r => `
+                    <tr>
+                        <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                        <td>₹${(r.amount_cents / 100).toFixed(2)}</td>
+                        <td><span class="status status-${r.status.toLowerCase()}">${r.status}</span></td>
+                        <td>${r.provider_txn || 'N/A'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    // Show/hide load more button
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = displayData.length < data.length ? 'block' : 'none';
+    }
+}
+
+function renderCallHistory(calls = null) {
+    const data = calls || currentUser.data?.calls || [];
+    const callHistory = document.getElementById('call-history');
+    const loadMoreBtn = document.getElementById('load-more-calls');
+    
+    if (data.length === 0) {
+        callHistory.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📞</div>
+                <div class="empty-state-text">No call history</div>
+                <div class="empty-state-subtext">Your calls will appear here</div>
+            </div>
+        `;
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+        return;
+    }
+    
+    const displayData = data.slice(0, displayedCalls);
+    
+    callHistory.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>To Number</th>
+                    <th>Duration</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${displayData.map(call => `
+                    <tr>
+                        <td>${new Date(call.started_at).toLocaleString()}</td>
+                        <td>${call.to_number || 'N/A'}</td>
+                        <td>${call.duration_seconds ? Math.floor(call.duration_seconds / 60) + 'm ' + (call.duration_seconds % 60) + 's' : 'N/A'}</td>
+                        <td>₹${call.cost_cents ? (call.cost_cents / 100).toFixed(2) : '0.00'}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+    
+    // Show/hide load more button
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = displayData.length < data.length ? 'block' : 'none';
+    }
+}
+
+// ==================== PROFILE SECTION ====================
+function setupProfileSection() {
+    const logoutBtn = document.getElementById('profile-logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+}
+
+function populateProfile() {
+    if (!currentUser.data || !currentUser.data.student) return;
+    
+    const student = currentUser.data.student;
+    
+    // Profile avatar - use first letter of name
+    const avatarLetter = document.querySelector('.profile-avatar span');
+    if (avatarLetter) {
+        avatarLetter.textContent = student.name.charAt(0).toUpperCase();
+    }
+    
+    // Profile info
+    const profileName = document.querySelector('.profile-card h2');
+    const profileId = document.querySelector('.profile-card p:nth-of-type(1)');
+    const profileRoom = document.querySelector('.profile-card p:nth-of-type(2)');
+    
+    if (profileName) profileName.textContent = student.name;
+    if (profileId) profileId.textContent = `Student ID: ${student.studentId}`;
+    if (profileRoom) profileRoom.textContent = `Room: ${student.room}`;
 }
 
 async function showStudentDashboard() {
@@ -315,63 +578,12 @@ async function loadStudentData(studentId) {
             parentsList.innerHTML = '<p class="no-data">No parent contacts added.</p>';
         }
         
-        // Update recharge history
-        const rechargeHistory = document.getElementById('recharge-history');
-        if (data.recharges && data.recharges.length > 0) {
-            rechargeHistory.innerHTML = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Transaction ID</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.recharges.map(r => `
-                            <tr>
-                                <td>${new Date(r.created_at).toLocaleDateString()}</td>
-                                <td>₹${(r.amount_cents / 100).toFixed(2)}</td>
-                                <td><span class="status status-${r.status.toLowerCase()}">${r.status}</span></td>
-                                <td>${r.provider_txn || 'N/A'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } else {
-            rechargeHistory.innerHTML = '<p class="no-data">No recharge history yet.</p>';
-        }
+        // Render histories with pagination
+        renderRechargeHistory();
+        renderCallHistory();
         
-        // Update call history
-        const callHistory = document.getElementById('call-history');
-        if (data.calls && data.calls.length > 0) {
-            callHistory.innerHTML = `
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Date & Time</th>
-                            <th>To Number</th>
-                            <th>Duration</th>
-                            <th>Cost</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.calls.map(call => `
-                            <tr>
-                                <td>${new Date(call.started_at).toLocaleString()}</td>
-                                <td>${call.to_number || 'N/A'}</td>
-                                <td>${call.duration_seconds ? Math.floor(call.duration_seconds / 60) + 'm ' + (call.duration_seconds % 60) + 's' : 'N/A'}</td>
-                                <td>₹${call.cost_cents ? (call.cost_cents / 100).toFixed(2) : '0.00'}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-        } else {
-            callHistory.innerHTML = '<p class="no-data">No call history yet.</p>';
-        }
+        // Populate profile section
+        populateProfile();
         
     } catch (error) {
         console.error('Failed to load student data:', error);
