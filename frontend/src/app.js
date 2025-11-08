@@ -1,5 +1,9 @@
 // Configuration
-const API_BASE = 'http://localhost:4500/api';
+// Dynamically use the same domain as frontend, or fallback to recharge.iotcom.io
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:4500/api'  // Local development
+    : `${window.location.protocol}//${window.location.hostname}/api`;  // Production (same domain)
+
 const SMEPAY_WIDGET_URL = 'https://extranet.smepay.in/payment/widget';
 
 // State management

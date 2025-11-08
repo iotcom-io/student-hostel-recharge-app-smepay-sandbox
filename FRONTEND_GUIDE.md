@@ -117,11 +117,21 @@ Open your browser: **http://localhost:3500**
 
 ## 🔧 Configuration
 
-### Backend API URL
+### Backend API URL (Dynamic)
 Located in `frontend/src/app.js`:
 ```javascript
-const API_BASE = 'http://localhost:4500/api';
+// Automatically uses same domain as frontend
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:4500/api'  // Local development
+    : `${window.location.protocol}//${window.location.hostname}/api`;  // Production
 ```
+
+**How it works:**
+- **Local Development:** Uses `http://localhost:4500/api`
+- **Production (recharge.iotcom.io):** Uses `https://recharge.iotcom.io/api`
+- **Any Domain:** Automatically adapts to the frontend's domain
+
+No port needed in production - API is on the same domain!
 
 ### SME Pay Widget URL
 ```javascript
