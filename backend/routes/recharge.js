@@ -84,19 +84,23 @@ router.post('/verify', async (req,res)=>{
 router.post('/webhook', async (req,res)=>{
   console.log('🔔 Webhook received:', JSON.stringify(req.body, null, 2));
   const payload = req.body || {};
-  // SMEPay will POST order_id or order_slug and status to callback_url; adapt if different
-  const order_id = payload.order_id || payload.data && payload.data.order_id;
-  const slug = payload.slug || payload.data && payload.data.slug;
-  const status = payload.status || payload.payment_status || (payload.data && payload.data.payment_status);
-  console.log('🆔 Extracted - order_id:', order_id, 'slug:', slug, 'status:', status);
+  // New webhook format: { ref_id, transaction_id, status, processed_at, created_at, amount }
+  const ref_id = payload.ref_id; // Our external order_id (EXT-xxx)
+  const transaction_id = payload.transaction_id; // SME Pay's internal transaction ID (slug)
+  const status = payload.status || payload.payment_status;
+  const amount = payload.amount;
+  console.log('🆔 Webhook - ref_id:', ref_id, 'transaction_id:', transaction_id, 'status:', status, 'amount:', amount);
   try{
-    // find recharge by provider_payload fields or provider_txn
+    // find recharge by ref_id (our external order_id) or transaction_id (slug)
     let r = null;
-    if(order_id){
-      r = await Recharge.findOne({ 'provider_payload.order_id': order_id }) || await Recharge.findOne({ provider_txn: order_id });
+    if(ref_id){
+      // ref_id matches our order_id field in provider_payload
+      r = await Recharge.findOne({ 'provider_payload.ref_id': ref_id });
     }
-    if(!r && slug){
-      r = await Recharge.findOne({ 'provider_payload.order_slug': slug }) || await Recharge.findOne({ 'provider_payload.slug': slug });
+    if(!r && transaction_id){
+      // transaction_id is the slug
+      r = await Recharge.findOne({ 'provider_payload.order_slug': transaction_id }) 
+        || await Recharge.findOne({ 'provider_payload.slug': transaction_id });
     }
     if(!r){
       console.log('⚠️ No matching recharge found for webhook');
@@ -105,7 +109,7 @@ router.post('/webhook', async (req,res)=>{
     }
     console.log('✅ Recharge found for webhook:', r._id);
     r.status = status || r.status || 'unknown';
-    r.provider_payload = payload;
+    r.provider_payload = { ...r.provider_payload, ...payload }; // Merge webhook data
     await r.save();
     console.log('💾 Recharge updated via webhook with status:', r.status);
     if(r.status && (r.status.toUpperCase()==='SUCCESS' || r.status.toUpperCase()==='PAID' || r.status.toUpperCase()==='COMPLETED')){

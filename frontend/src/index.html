@@ -3,20 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Hostel Recharge</title>
+    <title>Student Hostel Recharge - SME Pay</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Student Hostel Recharge System</h1>
-        </header>
-        <main>
-            <div class="card">
-                <h2>Welcome</h2>
-                <p>Student hostel recharge application with SME Pay integration.</p>
+    <div id="app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="login-card">
+                    <h1 class="app-title">🏠 Hostel Recharge</h1>
+                    <p class="app-subtitle">Powered by SME Pay</p>
+                    
+                    <div class="role-toggle">
+                        <button class="role-btn active" data-role="student">Student Login</button>
+                        <button class="role-btn" data-role="admin">Admin Login</button>
+                    </div>
+
+                    <form id="login-form">
+                        <div id="error-msg" class="error-msg"></div>
+                        
+                        <div class="form-group">
+                            <label id="username-label">Student ID</label>
+                            <input type="text" id="username" required placeholder="Enter your ID">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="password" required placeholder="Enter password">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                </div>
             </div>
-        </main>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-screen" class="screen">
+            <div class="dashboard">
+                <header class="dashboard-header">
+                    <div>
+                        <h2>Admin Dashboard</h2>
+                        <p id="admin-user"></p>
+                    </div>
+                    <button id="logout-btn" class="btn btn-secondary">Logout</button>
+                </header>
+
+                <div class="dashboard-content">
+                    <div class="section">
+                        <h3>Add New Student</h3>
+                        <form id="add-student-form">
+                            <div id="add-error-msg" class="error-msg"></div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Student ID *</label>
+                                    <input type="text" id="new-student-id" required placeholder="e.g., STU001">
+                                </div>
+                                <div class="form-group">
+                                    <label>Name *</label>
+                                    <input type="text" id="new-student-name" required placeholder="Full name">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Room Number *</label>
+                                    <input type="text" id="new-student-room" required placeholder="e.g., A101">
+                                </div>
+                                <div class="form-group">
+                                    <label>Password *</label>
+                                    <input type="password" id="new-student-password" required placeholder="Default password">
+                                </div>
+                            </div>
+                            
+                            <h4>Parent/Guardian Contact Information</h4>
+                            <div id="parents-container">
+                                <div class="parent-entry">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Parent Name</label>
+                                            <input type="text" class="parent-name" placeholder="Parent/Guardian name">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Phone Number (Allowed for calls)</label>
+                                            <input type="tel" class="parent-phone" placeholder="+91xxxxxxxxxx">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="button" id="add-parent-btn" class="btn btn-secondary">+ Add Another Parent</button>
+                            
+                            <button type="submit" class="btn btn-primary">Add Student</button>
+                        </form>
+                    </div>
+
+                    <div class="section">
+                        <h3>All Students</h3>
+                        <div id="students-list" class="students-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Dashboard -->
+        <div id="student-screen" class="screen">
+            <div class="dashboard">
+                <header class="dashboard-header">
+                    <div>
+                        <h2 id="student-name">Student Dashboard</h2>
+                        <p id="student-details"></p>
+                    </div>
+                    <button id="student-logout-btn" class="btn btn-secondary">Logout</button>
+                </header>
+
+                <div class="dashboard-content">
+                    <!-- Balance Card -->
+                    <div class="balance-section">
+                        <div class="balance-card">
+                            <h3>Current Balance</h3>
+                            <div class="balance-amount" id="balance-amount">₹0.00</div>
+                            <button id="recharge-btn" class="btn btn-primary">Recharge Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Student Info -->
+                    <div class="section">
+                        <h3>My Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Student ID:</span>
+                                <span id="info-student-id">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Name:</span>
+                                <span id="info-name">-</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Room:</span>
+                                <span id="info-room">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parents Numbers -->
+                    <div class="section">
+                        <h3>📞 Allowed Contact Numbers</h3>
+                        <div id="parents-list" class="parents-list"></div>
+                    </div>
+
+                    <!-- Recharge History -->
+                    <div class="section">
+                        <h3>💳 Recharge History</h3>
+                        <div id="recharge-history" class="table-container"></div>
+                    </div>
+
+                    <!-- Call History -->
+                    <div class="section">
+                        <h3>📞 Call History</h3>
+                        <div id="call-history" class="table-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recharge Modal -->
+        <div id="recharge-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Recharge Account</h3>
+                    <button class="modal-close" id="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="recharge-error-msg" class="error-msg"></div>
+                    <form id="recharge-form">
+                        <div class="form-group">
+                            <label>Recharge Amount</label>
+                            <select id="recharge-amount" required>
+                                <option value="">Select Amount</option>
+                                <option value="10000">₹100</option>
+                                <option value="20000">₹200</option>
+                                <option value="50000">₹500</option>
+                                <option value="100000">₹1,000</option>
+                                <option value="200000">₹2,000</option>
+                                <option value="500000">₹5,000</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+                    </form>
+                    <div id="payment-status" class="payment-status"></div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- SMEPay Checkout Widget Script -->
+    <script src="https://typof.co/smepay/checkout-v2.js"></script>
+    
+    <script src="app.js"></script>
 </body>
 </html>

@@ -1,9 +1,9 @@
 /*
-SMEPay helper (sandbox mode by default).
-Flow implemented from provided SMEPay docs:
+SMEPay helper (staging/test environment).
+Flow implemented from SMEPay docs:
 - Auth: POST /api/wiz/external/auth  -> client_id + client_secret (returns token)
 - Create Order: POST /api/wiz/external/order/create  (Bearer token)
-- Check Status: POST /api/external/order/status
+- Check Status: POST /api/external/order/status (NEW endpoint)
 - Validate Order: POST /api/external/order/validate
 
 This module attempts to obtain a temporary bearer token via Auth, caches it in-memory for reuse.
@@ -11,7 +11,7 @@ Replace or extend error handling as needed.
 */
 const axios = require('axios');
 
-const API_BASE = process.env.SMEPAY_API_URL || 'https://extranet.smepay.in/api';
+const API_BASE = process.env.SMEPAY_API_URL || 'https://staging.smepay.in/api';
 const CLIENT_ID = process.env.SMEPAY_CLIENT_ID || '';
 const CLIENT_SECRET = process.env.SMEPAY_CLIENT_SECRET || '';
 
@@ -73,8 +73,12 @@ async function createOrder({studentId, amount_cents, order_id, callback_url, cus
 
 async function checkStatus({ order_id, slug, ref_id }){
   const token = await getAuthToken();
-  const url = `${API_BASE}/wiz/external/order/status`;
-  const payload = {};
+  // Updated endpoint to match SME Pay documentation
+  const url = `${API_BASE}/external/order/status`;
+  const payload = {
+    client_id: CLIENT_ID  // Required by SME Pay API
+  };
+  // According to docs, can use order_id, slug, or ref_id
   if(order_id) payload.order_id = order_id;
   if(slug) payload.slug = slug;
   if(ref_id) payload.ref_id = ref_id;
@@ -85,15 +89,24 @@ async function checkStatus({ order_id, slug, ref_id }){
   const res = await axios.post(url, payload, { headers, validateStatus: ()=>true });
   console.log('📡 Check Status Response Status:', res.status);
   console.log('📡 Check Status Response Data:', JSON.stringify(res.data, null, 2));
+  // Map response to expected format
+  // Response format: { status, order_id, payment_status, amount, provider, created_at, processed_at }
+  if(res.data && res.data.payment_status) {
+    return {
+      ...res.data,
+      status: res.data.payment_status // Ensure backward compatibility
+    };
+  }
   return res.data || {};
 }
 
 async function validateOrder({ amount_cents, slug }){
   const token = await getAuthToken();
-  const url = `${API_BASE}/wiz/external/order/validate`;
+  // Updated endpoint to match SME Pay documentation
+  const url = `${API_BASE}/external/order/validate`;
   const payload = {
     client_id: CLIENT_ID,
-    amount: (amount_cents/100),
+    amount: (amount_cents/100), // Numeric amount (not string)
     slug: slug
   };
   console.log('🔍 Validating order with URL:', url);
